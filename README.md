@@ -41,6 +41,6 @@ cmake --build . --config Release
 ```
 
 ### Options
-  * -l, --little-endian - Output in little-endian format (native x86/x64, faster for DACs)
-  * -b, --big-endian - Output in big-endian format (default, compatible with existing DACs files)
+  * -l, --little-endian - Output in little-endian format
+  * -b, --big-endian - Output in big-endian format
   * -h, --help - Show help message with usage examples
