@@ -29,6 +29,11 @@ typedef struct {
     int rank[2];
 } suffix_t;
 
+typedef enum {
+    ENDIAN_LITTLE,
+    ENDIAN_BIG
+} endian_t;
+
 ////////////////////////////////////////////////////////////////////////////////
 // Prototypes:
 ////////////////////////////////////////////////////////////////////////////////
@@ -39,7 +44,7 @@ int* ConstructArraySuffixRadix(char* text, int n);
 int* ConstructSuffixArraySimple(char* text, int n);
 int* ComputeLCPArray(char* text, int* suffix_array, int n);
 char* ReadFile(const char* filename, long* file_size);
-int WriteLCPBinary(const char* filename, int* lcp_array, int n);
+int WriteLCPBinary(const char* filename, int* lcp_array, int n, endian_t endianness);
 void PrintLCPStatistics(int* lcp_array, int n);
 int main(int argc, char* argv[]);
 

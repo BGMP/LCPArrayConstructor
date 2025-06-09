@@ -30,7 +30,7 @@ int* ConstructArraySuffixRadix(char* text, int n);
 int* ConstructSuffixArraySimple(char* text, int n);
 int* ComputeLCPArray(char* text, int* suffix_array, int n);
 char* ReadFile(const char* filename, long* file_size);
-int WriteLCPBinary(const char* filename, int* lcp_array, int n);
+int WriteLCPBinary(const char* filename, int* lcp_array, int n, endian_t endianness);
 void PrintLCPStatistics(int* lcp_array, int n);
 int main(int argc, char* argv[]);
 
@@ -231,17 +231,32 @@ char* ReadFile(const char* filename, long* file_size) {
 // Write LCP array to binary file
 //
 
-int WriteLCPBinary(const char* filename, int* lcp_array, int n) {
+int WriteLCPBinary(const char* filename, int* lcp_array, int n, endian_t endianness) {
   FILE* file = fopen(filename, "wb");
   if (!file) {
     printf("Error: Cannot create output file '%s'\n", filename);
     return 1;
   }
 
-  // Write as unsigned integers (compatible with DACs)
   for (int i = 0; i < n; i++) {
     unsigned int value = (unsigned int)lcp_array[i];
-    if (fwrite(&value, sizeof(unsigned int), 1, file) != 1) {
+    unsigned char bytes[4];
+
+    if (endianness == ENDIAN_BIG) {
+      // Big-endian format (for DACs compatibility)
+      bytes[0] = (value >> 24) & 0xFF;  // Most significant byte first
+      bytes[1] = (value >> 16) & 0xFF;
+      bytes[2] = (value >> 8) & 0xFF;
+      bytes[3] = value & 0xFF;          // Least significant byte last
+    } else {
+      // Little-endian format (native on most x86/x64 systems)
+      bytes[3] = (value >> 24) & 0xFF;  // Most significant byte last
+      bytes[2] = (value >> 16) & 0xFF;
+      bytes[1] = (value >> 8) & 0xFF;
+      bytes[0] = value & 0xFF;          // Least significant byte first
+    }
+
+    if (fwrite(bytes, 4, 1, file) != 1) {
       printf("Error: Failed to write LCP value at index %d\n", i);
       fclose(file);
       return 1;
@@ -249,6 +264,8 @@ int WriteLCPBinary(const char* filename, int* lcp_array, int n) {
   }
 
   fclose(file);
+  printf("LCP array written in %s format\n",
+         endianness == ENDIAN_BIG ? "big-endian" : "little-endian");
   return 0;
 }
 
@@ -309,21 +326,62 @@ void PrintLCPStatistics(int* lcp_array, int n) {
 }
 
 int main(int argc, char* argv[]) {
-  if (argc != 3) {
-    printf("LCP Array Constructor\n");
-    printf("Usage: %s <input_text_file> <output_binary_file>\n", argv[0]);
-    printf("\nThis program constructs the LCP array from a text file\n");
-    printf("and outputs it as a binary file compatible with DACs.\n");
-    printf("\nExample: %s dna.100MB dna_lcp.bin\n", argv[0]);
-    return 1;
+  // Default endianness
+  endian_t output_endianness = ENDIAN_LITTLE;
+
+  // Parse command line arguments
+  int arg_index = 1;
+  const char* input_file = NULL;
+  const char* output_file = NULL;
+
+  // Check for flags
+  while (arg_index < argc) {
+    if (strcmp(argv[arg_index], "--little-endian") == 0 || strcmp(argv[arg_index], "-l") == 0) {
+      output_endianness = ENDIAN_LITTLE;
+      arg_index++;
+    } else if (strcmp(argv[arg_index], "--big-endian") == 0 || strcmp(argv[arg_index], "-b") == 0) {
+      output_endianness = ENDIAN_BIG;
+      arg_index++;
+    } else if (strcmp(argv[arg_index], "--help") == 0 || strcmp(argv[arg_index], "-h") == 0) {
+      printf("LCP Array Constructor\n");
+      printf("Usage: %s [options] <input_text_file> <output_binary_file>\n", argv[0]);
+      printf("\nOptions:\n");
+      printf("  -l, --little-endian    Output in little-endian format\n");
+      printf("  -b, --big-endian       Output in big-endian format\n");
+      printf("  -h, --help             Show this help message\n");
+      printf("\nThis program constructs the LCP array from a text file\n");
+      printf("and outputs it as a binary file.\n");
+      printf("\nExamples:\n");
+      printf("  %s dna.100MB dna_lcp.bin                    # Little-endian (default)\n", argv[0]);
+      printf("  %s -b dna.100MB dna_lcp.bin                 # Big-endian\n", argv[0]);
+      printf("  %s --little-endian dna.100MB dna_lcp.bin    # Little-endian\n", argv[0]);
+      return 0;
+    } else {
+      // Not a flag, must be a filename
+      if (input_file == NULL) {
+        input_file = argv[arg_index];
+      } else if (output_file == NULL) {
+        output_file = argv[arg_index];
+      } else {
+        printf("Error: Too many arguments\n");
+        printf("Use '%s --help' for usage information\n", argv[0]);
+        return 1;
+      }
+      arg_index++;
+    }
   }
 
-  const char* input_file = argv[1];
-  const char* output_file = argv[2];
+  if (input_file == NULL || output_file == NULL) {
+    printf("LCP Array Constructor\n");
+    printf("Usage: %s [options] <input_text_file> <output_binary_file>\n", argv[0]);
+    printf("Use '%s --help' for more information\n", argv[0]);
+    return 1;
+  }
 
   printf("LCP Array Constructor\n");
   printf("Input file: %s\n", input_file);
   printf("Output file: %s\n", output_file);
+  printf("Output format: %s\n", output_endianness == ENDIAN_BIG ? "big-endian" : "little-endian");
 
   // Read input file
   printf("\nReading input file...\n");
@@ -361,9 +419,8 @@ int main(int argc, char* argv[]) {
   printf("LCP computation time: %.2f seconds\n",
          (double)(lcp_time - sa_time) / CLOCKS_PER_SEC);
 
-  // Write binary output
   printf("\nWriting LCP array to binary file...\n");
-  if (WriteLCPBinary(output_file, lcp_array, n) != 0) {
+  if (WriteLCPBinary(output_file, lcp_array, n, output_endianness) != 0) {
     printf("Failed to write output file\n");
     free(text);
     free(suffix_array);
