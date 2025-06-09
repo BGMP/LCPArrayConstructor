@@ -12,7 +12,35 @@ This program takes any text file and:
 The LCP array is essential for testing variable-length encoding schemes on realistic integer sequences where most values
 are small but some can be very large.
 
+## Build Instructions
+### Prerequisites
+  * CMake 3.27 or higher
+  * C++ compiler with C++17 support (GCC, Clang, or MSVC)
+
+### Building
+```sh
+# Clone or download the project
+cd LCPArrayConstructor
+
+# Create build directory
+mkdir build
+cd build
+
+# Configure and build
+cmake ..
+make
+
+# Or on Windows with Visual Studio
+cmake ..
+cmake --build . --config Release
+```
+
 ## Usage
 ```sh
 ./LCPArrayGenerator <input_text_file> <output_binary_file>
 ```
+
+### Options
+  * -l, --little-endian - Output in little-endian format (native x86/x64, faster for DACs)
+  * -b, --big-endian - Output in big-endian format (default, compatible with existing DACs files)
+  * -h, --help - Show help message with usage examples
