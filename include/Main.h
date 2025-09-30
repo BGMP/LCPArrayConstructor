@@ -24,11 +24,6 @@
 // Types:
 ////////////////////////////////////////////////////////////////////////////////
 
-typedef struct {
-    int index;
-    int rank[2];
-} suffix_t;
-
 typedef enum {
     ENDIAN_LITTLE,
     ENDIAN_BIG
@@ -38,19 +33,20 @@ typedef enum {
 // Prototypes:
 ////////////////////////////////////////////////////////////////////////////////
 
-int CompareSuffixes(const void* a, const void* b);
-int CompareSuffixesDirect(const void* a, const void* b);
-int* ConstructArraySuffixRadix(char* text, int n);
-int* ConstructSuffixArraySimple(char* text, int n);
-int* ComputeLCPArray(char* text, int* suffix_array, int n);
-char* ReadFile(const char* filename, long* file_size);
-int WriteLCPBinary(const char* filename, int* lcp_array, int n, endian_t endianness);
-void PrintLCPStatistics(int* lcp_array, int n);
-int main(int argc, char* argv[]);
+extern void CleanUpGlobals();
+extern int* ConstructSuffixArray(char* input_text, int n);
+extern int* ComputeLCPArray(char* text, int* suffix_array, int n);
+extern char* ReadFile(const char* filename, long* file_size);
+extern int WriteLCPToBinary(const char* filename, int* lcp_array, int n, endian_t endianness);
+extern int main(int argc, char* argv[]);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Globals:
 ////////////////////////////////////////////////////////////////////////////////
 
-char* global_text = NULL;
-int global_n = 0;
+static int* g_text = NULL;
+static int* g_sa = NULL;
+static int* g_sa2 = NULL;
+static int* g_rank = NULL;
+static int* g_c = NULL;
+static int* g_lcp = NULL;
