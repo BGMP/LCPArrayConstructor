@@ -14,7 +14,7 @@ are small but some can be very large.
 
 ## Build Instructions
 ### Prerequisites
-  * CMake 3.27 or higher
+  * CMake 3.10.2
   * C++ compiler with C++17 support (GCC, Clang, or MSVC)
 
 ### Building
